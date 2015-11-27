@@ -23,7 +23,7 @@
 
 PYTHON=python2.5
 APPCFG=`which appcfg.py`
-APPSERVER=`which dev_appserver.py`
+APPSERVER=`which old_dev_appserver.py`
 
 
 APP_ID=`cat app.yaml.tmpl | grep application | cut -d " " -f 2`
