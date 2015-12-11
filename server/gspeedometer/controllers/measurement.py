@@ -200,7 +200,7 @@ class MeasurementType:
           ('profile_4_freq', 'Profile 4 frequency (float)'),
           ('profile_unlimited', 'Unlimited profile frequency (float)'),
           ('packet_size_byte', 'Ping packet size (bytes)')]))
-    else if measurement_type == 'smart ping':
+    elif measurement_type == 'smart ping':
       return MeasurementType(
           'smart ping', 'automatic scheduled ping tests', SortedDict([('target', 'Target (IP or hostname)'),
           ('location_update_distance', 'Location update distance (m)'),
