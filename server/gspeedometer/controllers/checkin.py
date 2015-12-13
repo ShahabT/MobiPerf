@@ -44,7 +44,13 @@ class Checkin(webapp.RequestHandler):
     try:
       # Change device id such that it is anonymized, but preserve TAC.
       checkin['tac'] = util.GetTypeAllocationCode(checkin['id'])
-      checkin['id'] = util.HashDeviceId(checkin['id'])
+      
+
+      # We need the actual id, because we need to make a decision which ue need to take the task. 
+      # checkin['id'] = util.HashDeviceId(checkin['id'])
+
+
+
       # Extract DeviceInfo.
       device_id = checkin['id']
       logging.info('Checkin from device %s', device_id)

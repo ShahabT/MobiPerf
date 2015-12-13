@@ -42,7 +42,7 @@ MEASUREMENT_TYPES = [('ping', 'ping'),
                      ('rrc', 'RRC inference'),
                      ('udp_burst', 'UDP burst'),
                      # Smart Mobilyzer
-                     ('smart ping','automatic scheduled ping tests')
+                     ('smart_ping','automatic scheduled ping tests')
                      ]
 
 class Measurement(webapp.RequestHandler):
@@ -202,7 +202,7 @@ class MeasurementType:
           ('packet_size_byte', 'Ping packet size (bytes)')]))
     elif measurement_type == 'smart ping':
       return MeasurementType(
-          'smart ping', 'automatic scheduled ping tests', SortedDict([('target', 'Target (IP or hostname)'),
+          'smart_ping', 'smart ping', SortedDict([('target', 'Target (IP or hostname)'),
           ('location_update_distance', 'Location update distance (m)'),
           ('trigger_location_update', 'Trigger location update (bool)'),
           ('ping_timeout_sec', 'Ping timeout (seconds)'),
@@ -212,9 +212,9 @@ class MeasurementType:
           ('profile_4_freq', 'Profile 4 frequency (float)'),
           ('profile_unlimited', 'Unlimited profile frequency (float)'),
           ('packet_size_byte', 'Ping packet size (bytes)'),
-          ('start time','time that the task should be started'),
-          ('end time','time that the task should be completed'),
-          ('# of UEs','number of user devices that should be involved in this task')
+          ('start_time','start time'),
+          ('end_time','end time'),
+          ('#_of_UEs','# of UEs')
           ]))
     elif measurement_type == 'dns_lookup':
       return MeasurementType(

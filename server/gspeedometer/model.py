@@ -117,6 +117,13 @@ class DeviceProperties(db.Model):
   # Receive signal strength of the current cellular connection
   rssi = db.IntegerProperty()
 
+  # SmartMobilyzer-specific properties
+  # See https://cloud.google.com/appengine/docs/python/datastore/typesandpropertyclasses?hl=en
+  cpurace_type = db.FloatProperty()
+  memrace_type = db.FloatProperty()
+  networkrace_type= db.FloatProperty()
+  
+
   def JSON_DECODE_location(self, inputval):
     lat = float(inputval['latitude'])
     lon = float(inputval['longitude'])

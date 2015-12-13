@@ -76,6 +76,7 @@ class Schedule(webapp.RequestHandler):
         self.error(501)
         return
 
+
       # build completed form dynamically from POST and fields
       add_to_schedule_form = type(
           'AddToScheduleForm',
@@ -85,42 +86,50 @@ class Schedule(webapp.RequestHandler):
       add_to_schedule_form.full_clean()
       if add_to_schedule_form.is_valid():
 
-        params = dict()
-        thetype = add_to_schedule_form.cleaned_data['type']
 
-        # extract supported fields
-        for field in measurement.field_to_description.keys():
-          value = add_to_schedule_form.cleaned_data[field]
-          if value:
-            params[field] = value
-        tag = add_to_schedule_form.cleaned_data['tag']
-        thefilter = add_to_schedule_form.cleaned_data['filter']
-        count = add_to_schedule_form.cleaned_data['count'] or -1
-        interval = add_to_schedule_form.cleaned_data['interval']
-        priority = add_to_schedule_form.cleaned_data['priority']
-        p1 = add_to_schedule_form.cleaned_data['profile_1_freq']
-        p2 = add_to_schedule_form.cleaned_data['profile_2_freq']
-        p3 = add_to_schedule_form.cleaned_data['profile_3_freq']
-        p4 = add_to_schedule_form.cleaned_data['profile_4_freq']
 
         logging.info('Got TYPE: ' + thetype)
+        
+        # This is where we experiment our smart scheduling idea
+        if thetype == "smart_ping":      
+          smartScheduler.schedule(add_to_schedule_form)
 
-        task = model.Task()
-        task.created = datetime.datetime.utcnow()
-        task.user = users.get_current_user()
-        task.type = thetype
-        if tag:
-          task.tag = tag
-        if thefilter:
-          task.filter = thefilter
-        task.count = count
-        task.interval_sec = float(interval)
-        task.priority = priority
+        else:
+          params = dict()
+          thetype = add_to_schedule_form.cleaned_data['type']
 
-        # Set up correct type-specific measurement parameters        
-        for name, value in params.items():
-          setattr(task, 'mparam_' + name, value)
-        task.put()
+          # extract supported fields
+          for field in measurement.field_to_description.keys():
+            value = add_to_schedule_form.cleaned_data[field]
+            if value:
+              params[field] = value
+          tag = add_to_schedule_form.cleaned_data['tag']
+          thefilter = add_to_schedule_form.cleaned_data['filter']
+          count = add_to_schedule_form.cleaned_data['count'] or -1
+          interval = add_to_schedule_form.cleaned_data['interval']
+          priority = add_to_schedule_form.cleaned_data['priority']
+          p1 = add_to_schedule_form.cleaned_data['profile_1_freq']
+          p2 = add_to_schedule_form.cleaned_data['profile_2_freq']
+          p3 = add_to_schedule_form.cleaned_data['profile_3_freq']
+          p4 = add_to_schedule_form.cleaned_data['profile_4_freq']
+          
+          # This is where a task is scheduled and stored in the google app engine database
+          task = model.Task()
+          task.created = datetime.datetime.utcnow()
+          task.user = users.get_current_user()
+          task.type = thetype
+          if tag:
+            task.tag = tag
+          if thefilter:
+            task.filter = thefilter
+          task.count = count
+          task.interval_sec = float(interval)
+          task.priority = priority
+
+          # Set up correct type-specific measurement parameters        
+          for name, value in params.items():
+            setattr(task, 'mparam_' + name, value)
+          task.put()
 
     schedule = model.Task.all()
     schedule.order('-created')
