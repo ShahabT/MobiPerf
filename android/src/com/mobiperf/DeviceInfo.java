@@ -25,4 +25,9 @@ public class DeviceInfo {
   public String manufacturer;
   public String model;
   public String os;
+  
+//  Other device info we added for SmartMobilyzer
+  public double cpu_race;
+  public double memory_race;
+  public double network_race;
 }
