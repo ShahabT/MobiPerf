@@ -38,6 +38,7 @@ import android.net.ConnectivityManager;
 //import android.net.Network;
 //import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.TrafficStats;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
@@ -145,6 +146,12 @@ public class PhoneUtils {
   //server configuration port on M-Lab servers 
   private int portNum = 6003;
   private int tcpTimeout = 3000;
+  
+  
+  
+//  For checking network utilization
+  private long lastTx = 0;
+  private long lastRx = 0;
   
   protected PhoneUtils(Context context) {
     this.context = context;
@@ -781,17 +788,31 @@ public class PhoneUtils {
 //	This function is just a temporary function
 	private double getNetworkRace(){
 
+//		
+////		ConnectivityManager connectivity = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+////	    Network[] networks = connectivity.getAllNetworks();
+//	    int maxDown = 0;
+//	/*    for (int i = 0; i < networks.length; i++) {
+//	        NetworkCapabilities capabilities = connectivity.getNetworkCapabilities(networks[i]);    
+//	        int upBand = capabilities.getLinkDownstreamBandwidthKbps();
+//	        int downBand = capabilities.getLinkUpstreamBandwidthKbps();
+//	        maxDown = (maxDown>downBand)?maxDown:downBand;
+//	    }*/
+//		return maxDown;
 		
-//		ConnectivityManager connectivity = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
-//	    Network[] networks = connectivity.getAllNetworks();
-	    int maxDown = 0;
-	/*    for (int i = 0; i < networks.length; i++) {
-	        NetworkCapabilities capabilities = connectivity.getNetworkCapabilities(networks[i]);    
-	        int upBand = capabilities.getLinkDownstreamBandwidthKbps();
-	        int downBand = capabilities.getLinkUpstreamBandwidthKbps();
-	        maxDown = (maxDown>downBand)?maxDown:downBand;
-	    }*/
-		return maxDown;
+		long rx = TrafficStats.getTotalRxBytes();
+		long tx = TrafficStats.getTotalTxBytes();
+		
+		if(lastRx+lastTx==0){
+			return 0;
+		}
+		else{
+//			Return average network utilization since last checkin
+			double avgNetUtil = (rx+tx-lastRx-lastTx)/com.mobiperf.Config.DEFAULT_CHECKIN_INTERVAL_SEC/1000.0;
+			lastRx = rx;
+			lastTx = tx;
+			return avgNetUtil;
+		}
 	}
 
   
