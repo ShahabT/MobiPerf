@@ -19,7 +19,8 @@ import com.mobiperf.DeviceProperty;
 import com.mobiperf.Logger;
 import com.mobiperf.R;
 
-
+import android.app.ActivityManager;
+import android.app.ActivityManager.MemoryInfo;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -34,7 +35,10 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.net.ConnectivityManager;
+//import android.net.Network;
+//import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.TrafficStats;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
@@ -52,7 +56,9 @@ import android.view.Display;
 import android.view.WindowManager;
 import android.webkit.WebView;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -140,6 +146,12 @@ public class PhoneUtils {
   //server configuration port on M-Lab servers 
   private int portNum = 6003;
   private int tcpTimeout = 3000;
+  
+  
+  
+//  For checking network utilization
+  private long lastTx = 0;
+  private long lastRx = 0;
   
   protected PhoneUtils(Context context) {
     this.context = context;
@@ -694,6 +706,114 @@ public class PhoneUtils {
     }
     return deviceId;
   }
+  
+  private double getMemoryRace(){
+	  	
+	    long freeSize = 0L;
+	    long totalSize = 0L;
+	    double usedPercentage = 0;
+	    try {
+//	    	Method 1
+	        Runtime info = Runtime.getRuntime();
+	        freeSize = info.freeMemory();
+	        totalSize = info.totalMemory();
+	        
+	    } catch (Exception e) {
+	        e.printStackTrace();
+//	        Method 2
+//		    ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+//		    MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+//		    activityManager.getMemoryInfo(memoryInfo);
+//		    
+//		    freeSize = memoryInfo.availMem;
+//		    totalSize = memoryInfo.totalMem;
+	    }
+	    Logger.i("Get memory race:"+ Double.toString(usedPercentage) );
+	    usedPercentage = (totalSize - freeSize)*1.0/totalSize;
+	  	    
+	    return usedPercentage;
+  }
+  
+  
+  private double getCpuRace() {
+
+	    String tempString = executeTop();
+
+	    tempString = tempString.replaceAll(",", "");
+	    tempString = tempString.replaceAll("User", "");
+	    tempString = tempString.replaceAll("System", "");
+	    tempString = tempString.replaceAll("IOW", "");
+	    tempString = tempString.replaceAll("IRQ", "");
+	    tempString = tempString.replaceAll("%", "");
+	    for (int i = 0; i < 10; i++) {
+	        tempString = tempString.replaceAll("  ", " ");
+	    }
+	    tempString = tempString.trim();
+	    String[] myString = tempString.split(" ");
+	    int[] cpuUsageAsInt = new int[myString.length];
+	    for (int i = 0; i < myString.length; i++) {
+	        myString[i] = myString[i].trim();
+	        cpuUsageAsInt[i] = Integer.parseInt(myString[i]);
+	    }
+	    return (cpuUsageAsInt[0]+cpuUsageAsInt[1])/100.0;
+	}
+
+//  The system call top to get cpu usage info
+	private String executeTop() {
+	    java.lang.Process p = null;
+	    BufferedReader in = null;
+	    String returnString = null;
+	    try {
+	        p = Runtime.getRuntime().exec("top -n 1");
+	        in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+	        while (returnString == null || returnString.contentEquals("")) {
+	            returnString = in.readLine();
+	        }
+	    } catch (IOException e) {
+	    	Logger.e("executeTop: error in getting first line of top");
+	        e.printStackTrace();
+	    } finally {
+	        try {
+	            in.close();
+	            p.destroy();
+	        } catch (IOException e) {
+	        	Logger.e("executeTop: error in closing and destroying top process");
+	            e.printStackTrace();
+	        }
+	    }
+	    return returnString;
+	}
+	
+	
+//	This function is just a temporary function
+	private double getNetworkRace(){
+
+//		
+////		ConnectivityManager connectivity = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+////	    Network[] networks = connectivity.getAllNetworks();
+//	    int maxDown = 0;
+//	/*    for (int i = 0; i < networks.length; i++) {
+//	        NetworkCapabilities capabilities = connectivity.getNetworkCapabilities(networks[i]);    
+//	        int upBand = capabilities.getLinkDownstreamBandwidthKbps();
+//	        int downBand = capabilities.getLinkUpstreamBandwidthKbps();
+//	        maxDown = (maxDown>downBand)?maxDown:downBand;
+//	    }*/
+//		return maxDown;
+		
+		long rx = TrafficStats.getTotalRxBytes();
+		long tx = TrafficStats.getTotalTxBytes();
+		
+		if(lastRx+lastTx==0){
+			return 0;
+		}
+		else{
+//			Return average network utilization since last checkin
+			double avgNetUtil = (rx+tx-lastRx-lastTx)/com.mobiperf.Config.DEFAULT_CHECKIN_INTERVAL_SEC/1000.0;
+			lastRx = rx;
+			lastTx = tx;
+			return avgNetUtil;
+		}
+	}
 
   
   public DeviceInfo getDeviceInfo() {
@@ -704,6 +824,12 @@ public class PhoneUtils {
       deviceInfo.model = Build.MODEL;
       deviceInfo.os = getVersionStr();
       deviceInfo.user = Build.VERSION.CODENAME;
+      
+//      Collect info for cpu, memory and network resource races
+      deviceInfo.cpu_race = getCpuRace();
+      deviceInfo.memory_race = getMemoryRace() ;
+      deviceInfo.network_race = getNetworkRace();
+      
     }
     
     return deviceInfo;

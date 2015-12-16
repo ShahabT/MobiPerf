@@ -123,7 +123,15 @@ public class Checkin {
               .getDeviceProperty()));
       resourceCapManager.updateDataUsage(ResourceCapManager.PHONEUTILCOST);
 
-      Logger.d(status.toString());
+//      We should add some resource constraints information into the message sent to the server
+      status.put("cpu_race",info.cpu_race);
+      status.put("mem_race",info.memory_race);
+      status.put("network_race",info.network_race);
+      
+      
+      
+      Logger.d(status.toString());         
+      
       sendStringMsg("Checking in");
 
       String result = serviceRequest("checkin", status.toString());
