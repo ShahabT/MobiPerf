@@ -86,6 +86,7 @@ class Measurement(webapp.RequestHandler):
         util.ConvertFromDict(measurement, measurement_dict)
         measurement.device_properties = device_properties
         measurement.put()
+        measurement.task.mesearmentDone(self)
     except Exception, e:
       logging.exception('Got exception posting measurements')
 
@@ -200,7 +201,7 @@ class MeasurementType:
           ('profile_4_freq', 'Profile 4 frequency (float)'),
           ('profile_unlimited', 'Unlimited profile frequency (float)'),
           ('packet_size_byte', 'Ping packet size (bytes)')]))
-    elif measurement_type == 'smart ping':
+    elif measurement_type == 'smart_ping':
       return MeasurementType(
           'smart_ping', 'smart ping', SortedDict([('target', 'Target (IP or hostname)'),
           ('location_update_distance', 'Location update distance (m)'),
@@ -214,7 +215,7 @@ class MeasurementType:
           ('packet_size_byte', 'Ping packet size (bytes)'),
           ('start_time','start time'),
           ('end_time','end time'),
-          ('#_of_UEs','# of UEs')
+          ('device_count','# of UEs')
           ]))
     elif measurement_type == 'dns_lookup':
       return MeasurementType(

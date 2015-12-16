@@ -29,7 +29,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 
 from gspeedometer import model
-from gspeedometer.controllers import measurement
+from gspeedometer.controllers import measurement, smartScheduler
 from gspeedometer.controllers.measurement import MeasurementType
 from gspeedometer.helpers import acl
 
@@ -85,16 +85,8 @@ class Schedule(webapp.RequestHandler):
 
       add_to_schedule_form.full_clean()
       if add_to_schedule_form.is_valid():
-
-
-
-        logging.info('Got TYPE: ' + thetype)
+          logging.info('Got TYPE: ' + thetype)
         
-        # This is where we experiment our smart scheduling idea
-        if thetype == "smart_ping":      
-          smartScheduler.schedule(add_to_schedule_form)
-
-        else:
           params = dict()
           thetype = add_to_schedule_form.cleaned_data['type']
 
@@ -112,7 +104,7 @@ class Schedule(webapp.RequestHandler):
           p2 = add_to_schedule_form.cleaned_data['profile_2_freq']
           p3 = add_to_schedule_form.cleaned_data['profile_3_freq']
           p4 = add_to_schedule_form.cleaned_data['profile_4_freq']
-          
+
           # This is where a task is scheduled and stored in the google app engine database
           task = model.Task()
           task.created = datetime.datetime.utcnow()
@@ -126,10 +118,13 @@ class Schedule(webapp.RequestHandler):
           task.interval_sec = float(interval)
           task.priority = priority
 
-          # Set up correct type-specific measurement parameters        
+          # Set up correct type-specific measurement parameters
           for name, value in params.items():
             setattr(task, 'mparam_' + name, value)
-          task.put()
+          if thetype.startswith("smart"):
+            smartScheduler.schedule(task, add_to_schedule_form.cleaned_data['start_time'], add_to_schedule_form.cleaned_data['end_time'], int(add_to_schedule_form.cleaned_data['device_count']))
+          else:
+            task.put()
 
     schedule = model.Task.all()
     schedule.order('-created')
@@ -207,7 +202,7 @@ class Schedule(webapp.RequestHandler):
       fields[field] = forms.CharField(required=False, label=text)
 
     fields['count'] = forms.IntegerField(
-       required=False, initial= -1, min_value= -1, max_value=1000)
+       required=False, initial= 1, min_value= -1, max_value=1000)
     fields['interval'] = forms.IntegerField(
         required=True, label='Interval (sec)', min_value=1, initial=600)
     fields['tag'] = forms.CharField(required=False)
